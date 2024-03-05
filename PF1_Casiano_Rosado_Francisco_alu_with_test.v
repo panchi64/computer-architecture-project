@@ -12,6 +12,12 @@ module ALU(
 reg [31:0] dif;
 
 always @(A or B or op) begin
+  Out = 32'h0;
+  Z = 1'b0;
+  N = 1'b0;
+  C = 1'b0;
+  V = 1'b0;
+
   case(op)
     4'b0000: begin  // Just B
       Out = B;
@@ -57,8 +63,7 @@ always @(A or B or op) begin
       C = A < B;
       V = (A[31] ^ B[31]) & (A[31] ^ dif[31]);
 
-      // Avoid overflow issues
-      if (N && V) begin
+      if (~N & V) begin
         Out = 32'h1;
       end else begin
         Out = 32'h0;
@@ -81,43 +86,34 @@ always @(A or B or op) begin
       end
     end
 
-    4'1010: begin  // ADD
-      Out = A + B;
+    4'b1010: begin  // Bitwise AND
+      Out = A & B;
       
     end
 
-    4'1011: begin  // ADD
-      Out = A + B;
+    4'b1011: begin  // Bitwise OR
+      Out = A | B;
       
     end
 
-    4'1100: begin  // ADD
-      Out = A + B;
+    4'b1100: begin  // Bitwise XOR
+      Out = A ^ B;
       
     end
 
-    4'1101: begin  // ADD
-      Out = A + B;
+    4'b1101: begin  // ADD
+      // Dead operator
       
     end
 
     4'b1110: begin  // ADD
-      Out = A + B;
+      // Dead operator
       
     end
 
     4'b1111: begin  // ADD
-      Out = A + B;
+      // Dead operator
       
-    end
-    
-    default: begin
-      // default values
-      Out = 32'h0;
-      Z = 1'b0;
-      N = 1'b0;
-      C = 1'b0;
-      V = 1'b0;
     end
   endcase
 end
@@ -132,7 +128,7 @@ module ALU_tb;
 
   // Inputs
   reg [31:0] A, B;
-  reg [2:0] op;
+  reg [3:0] op;
 
   // Outputs
   wire [31:0] Out;
@@ -153,13 +149,20 @@ module ALU_tb;
   initial begin
     A = 32'b10011100000000000000000000111000;
     B = 32'b01110000000000000000000000000011;
-    op = 4'b0000;  // ADD
+    op = 4'b0000;
 
-     // Loop to iterate through different op values
+    // Print table header
+    $display("%-9s%-33s%-3s%-3s%-3s%-3s", "Op Code", "Out", "Z", "N", "C", "V");
+    $display("----------------------------------------------");
+
+
+    // Loop to iterate through different op values 
+    //  (it ignores op code 1111 but that shouldn't matter since it's not used either way)
     while (op != 4'b1111) begin
       #2;  // Wait for 2 time units
       
-      $display("Test case (Op = %b):", op);
+      // Display test case information in a neat table
+      $display("%-9b%-33b%-3b%-3b%-3b%-3b", op, Out, Z, N, C, V);
       
       op = op + 1;  // Increment op value
     end
