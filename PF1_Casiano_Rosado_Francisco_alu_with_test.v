@@ -9,54 +9,76 @@ module ALU(
   output reg V
 );
 
+reg [31:0] dif;
+
 always @(A or B or op) begin
   case(op)
-    4'b0000: begin  // ADD
-      Out = A + B;
+    4'b0000: begin  // Just B
+      Out = B;
     end
     
-    4'b0001: begin  // SUB
-      Out = A - B;
+    4'b0001: begin  // B + 4
+      Out = B + 4;
     end
 
     4'b0010: begin  // ADD
       Out = A + B;
-      
     end
 
-    4'b0011: begin  // ADD
-      Out = A + B;
-      
+    4'b0011: begin  // SUB
+      Out = A - B;
+      Z = (Out == 32'h0);
+      N = Out[31];
+      C = A < B;
+      V = (A[31] ^ B[31]) & (A[31] ^ Out[31]);
     end
 
-    4'b0100: begin  // ADD
-      Out = A + B;
-      
+    4'b0100: begin  // (A + B) & 0xFFFFFFFE
+      Out = (A + B) & 32'hFFFFFFFE;
     end
 
-    4'b0101: begin  // ADD
-      Out = A + B;
-      
+    4'b0101: begin  // Logical left shift of A by lower 5 bits of B
+      Out = A << (B[4:0]);
     end
 
-    4'b0110: begin  // ADD
-      Out = A + B;
-      
+    4'b0110: begin  // Logical right shift of A by lower 5 bits of B
+      Out = A >> (B[4:0]);
     end
 
-    4'b0111: begin  // ADD
-      Out = A + B;
-      
+    4'b0111: begin  // Arithmetic right shift of A by lower 5 bits of B
+      Out = A >>> (B[4:0]);
     end
 
-    4'b1000: begin  // ADD
-      Out = A + B;
-      
+    4'b1000: begin  // if (A < B) then Out=1, else Out=0 (signed)
+      // Figure out if A - B triggers the N and V flags
+      dif = A - B;
+      Z = (dif == 32'h0);
+      N = dif[31];
+      C = A < B;
+      V = (A[31] ^ B[31]) & (A[31] ^ dif[31]);
+
+      // Avoid overflow issues
+      if (N && V) begin
+        Out = 32'h1;
+      end else begin
+        Out = 32'h0;
+      end
     end
 
-    4'b1001: begin  // ADD
-      Out = A + B;
-      
+    4'b1001: begin  // if (A < B) then Out=1, else Out=0 (unsigned)
+      // Figure out if A - B triggers the N and V flags
+      dif = A - B;
+      Z = (dif == 32'h0);
+      N = dif[31];
+      C = A < B;
+      V = (A[31] ^ B[31]) & (A[31] ^ dif[31]);
+
+      // Avoid overflow issues
+      if (C) begin
+        Out = 32'h1;
+      end else begin
+        Out = 32'h0;
+      end
     end
 
     4'1010: begin  // ADD
