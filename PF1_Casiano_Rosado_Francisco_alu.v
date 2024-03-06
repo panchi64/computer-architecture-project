@@ -1,7 +1,7 @@
 module ALU(
   input [31:0] A,
   input [31:0] B,
-  input [3:0] op,  // Operation code (0: Add, 1: Subtract)
+  input [3:0] op,
   output reg [31:0] Out,
   output reg Z,
   output reg N,
@@ -56,7 +56,6 @@ always @(A or B or op) begin
     end
 
     4'b1000: begin  // if (A < B) then Out=1, else Out=0 (signed)
-      // Figure out if A - B triggers the N and V flags
       dif = A - B;
       Z = (dif == 32'h0);
       N = dif[31];
@@ -71,14 +70,12 @@ always @(A or B or op) begin
     end
 
     4'b1001: begin  // if (A < B) then Out=1, else Out=0 (unsigned)
-      // Figure out if A - B triggers the N and V flags
       dif = A - B;
       Z = (dif == 32'h0);
       N = dif[31];
       C = A < B;
       V = (A[31] ^ B[31]) & (A[31] ^ dif[31]);
 
-      // Avoid overflow issues
       if (C) begin
         Out = 32'h1;
       end else begin
