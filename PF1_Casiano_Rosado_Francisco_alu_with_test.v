@@ -52,7 +52,7 @@ always @(A or B or op) begin
     end
 
     4'b0111: begin  // Arithmetic right shift of A by lower 5 bits of B
-      Out = A >>> B[4:0];
+      Out = $signed(A) >>> B[4:0];
     end
 
     4'b1000: begin  // if (A < B) then Out=1, else Out=0 (signed)
