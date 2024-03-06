@@ -48,11 +48,11 @@ always @(A or B or op) begin
     end
 
     4'b0110: begin  // Logical right shift of A by lower 5 bits of B
-      Out = A >> (B[4:0]);
+      Out = A >> B[4:0];
     end
 
     4'b0111: begin  // Arithmetic right shift of A by lower 5 bits of B
-      Out = A >>> (B[4:0]);
+      Out = A >>> B[4:0];
     end
 
     4'b1000: begin  // if (A < B) then Out=1, else Out=0 (signed)
@@ -122,7 +122,7 @@ endmodule
 
 
 // Test Code
-`timescale 1ns/1ns  // simulation timescale
+`timescale 1ns/1ns
 
 module ALU_tb;
 
@@ -134,7 +134,6 @@ module ALU_tb;
   wire [31:0] Out;
   wire Z, N, C, V;
 
-  // Instantiate the ALU module
   ALU uut (
     .A(A),
     .B(B),
@@ -151,20 +150,15 @@ module ALU_tb;
     B = 32'b01110000000000000000000000000011;
     op = 4'b0000;
 
-    // Print table header
-    $display("%-9s%-33s%-3s%-3s%-3s%-3s", "Op Code", "Out", "Z", "N", "C", "V");
-    $display("----------------------------------------------");
+    // Table header
+    $display("%-9s%-47s%-47s%-47s%-3s%-3s%-3s%-3s", "Op Code", "A", "B", "Out", "Z", "N", "C", "V");
+    $display("----------------------------------------------------------------------------------------------------------------------------------------------------------------");
 
-
-    // Loop to iterate through different op values 
-    //  (it ignores op code 1111 but that shouldn't matter since it's not used either way)
+    $monitor("%-9b%-33b(%d)  %-33b(%d)  %-33b(%d)  %-3b%-3b%-3b%-3b", op, A, A, B, B, Out, Out, Z, N, C, V);
+    
     while (op != 4'b1111) begin
-      #2;  // Wait for 2 time units
-      
-      // Display test case information in a neat table
-      $display("%-9b%-33b%-3b%-3b%-3b%-3b", op, Out, Z, N, C, V);
-      
-      op = op + 1;  // Increment op value
+      #2;
+      op = op + 1;
     end
 
     $finish;
