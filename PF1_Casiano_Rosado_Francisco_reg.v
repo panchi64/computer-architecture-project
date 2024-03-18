@@ -88,51 +88,76 @@ always @*
     end
 
 // Instantiating Binary Decoders for RA and RB
-BinaryDecoder decoderA(.SEL(RA), .OUT(PA));
-BinaryDecoder decoderB(.SEL(RB), .OUT(PB));
+wire [31:0] temp_PA, temp_PB; // Declare intermediate wires
+BinaryDecoder decoderA(.SEL(RA), .OUT(temp_PA));
+BinaryDecoder decoderB(.SEL(RB), .OUT(temp_PB));
 
 // Instantiating Multiplexers for selecting output based on RA and RB
-Multiplexer muxA(.A(PA), .B(32'b0), .SEL(RA == 5'b00000), .OUT(PA));
-Multiplexer muxB(.A(PB), .B(32'b0), .SEL(RB == 5'b00000), .OUT(PB));
+wire [31:0] muxA_out, muxB_out; // Declare intermediate wires
+Multiplexer muxA(.A(temp_PA), .B(32'b0), .SEL(RA == 5'b00000), .OUT(muxA_out));
+Multiplexer muxB(.A(temp_PB), .B(32'b0), .SEL(RB == 5'b00000), .OUT(muxB_out));
+
+// Assigning final values to PA and PB
+always @*
+begin
+    if (RA == 5'b00000)
+        PA = 32'b0;
+    else
+        PA = muxA_out;
+
+    PB = muxB_out;
+end
 
 endmodule
 
+// TODO: Make it work as requested. it is not looping until RW is 31
 module TestBench;
 
-reg [4:0] RW, RA, RB;
-reg [31:0] PW;
-reg CLK, LE;
+    reg [4:0] RW, RA, RB;
+    reg [31:0] PW;
+    reg CLK, LE;
 
-wire [31:0] PA, PB;
+    wire [31:0] PA, PB;
 
-RegisterFile reg_file(
-    .RW(RW),
-    .RA(RA),
-    .RB(RB),
-    .PW(PW),
-    .CLK(CLK),
-    .LE(LE),
-    .PA(PA),
-    .PB(PB)
-);
+    RegisterFile reg_file(
+        .RW(RW),
+        .RA(RA),
+        .RB(RB),
+        .PW(PW),
+        .CLK(CLK),
+        .LE(LE),
+        .PA(PA),
+        .PB(PB)
+    );
 
-// Clock generation
-always #1 CLK <= ~CLK;
+    // Clock generation
+    always #1 CLK <= ~CLK;
 
-// Stimulus
-initial begin
-    CLK = 0;
-    LE = 1;
-    PW = 32'd20;
-    RW = 5'd0;
-    RA = 5'd0;
-    RB = 5'd31;
+    // Stimulus
+    initial begin
+        CLK = 0;
+        LE = 1;
+        PW = 32'd20;
+        RW = 5'd0;
+        RA = 5'd0;
+        RB = 5'd31;
 
-    // Monitor to print values
-    $monitor("RW=%d RA=%d RB=%d PW=%d PA=%d PB=%d", RW, RA, RB, PW, PA, PB);
+        // Monitor to print values
+        $monitor("RW=%d RA=%d RB=%d PW=%d PA=%d PB=%d", RW, RA, RB, PW, PA, PB);
 
-    // Simulation duration
-    #100 $finish;
-end
+        // Simulation duration
+        #100 $finish;
+    end
+
+    // Stimulus generation
+    always @ (posedge CLK) begin
+        if (CLK % 4 == 0) begin // Every four clock cycles
+            if (RA < 5'd31) begin
+                RA = RA + 1;
+                RB = RB + 1;
+            end
+            PW = PW + 1;
+        end
+    end
 
 endmodule
